@@ -61,16 +61,72 @@
     .price-badge .label { font-size: 0.7rem; color: var(--text-muted); }
     .price-badge .value { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
 
-    .admin-link {
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      text-decoration: none;
-      padding: 0.35rem 0.65rem;
+    /* Hamburger */
+    .hamburger {
+      background: none;
       border: 1px solid var(--border);
       border-radius: 8px;
-      transition: color 0.15s, border-color 0.15s;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.4rem 0.55rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
     }
-    .admin-link:hover { color: var(--accent); border-color: var(--accent); }
+    .hamburger:hover { border-color: var(--accent); color: var(--accent); }
+    .hamburger.open { border-color: var(--accent); color: var(--accent); }
+    .hamburger span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+      transition: transform 0.2s, opacity 0.2s;
+      transform-origin: center;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* Dropdown menu */
+    .nav-menu {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-width: 180px;
+      overflow: hidden;
+      z-index: 20;
+      opacity: 0;
+      transform: translateY(-8px) scale(0.97);
+      pointer-events: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .nav-menu.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+    }
+    .nav-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.85rem 1.1rem;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: background 0.12s;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-menu a:last-child { border-bottom: none; }
+    .nav-menu a:hover { background: var(--surface2); color: var(--accent); }
+    .nav-menu a .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
 
     .container { max-width: 540px; margin: 0 auto; padding: 1.25rem; }
 
@@ -265,9 +321,14 @@
       <span class="label">per consumptie</span>
       <span class="value" id="priceDisplay">…</span>
     </div>
-    <a href="/export.html" target="_blank" class="admin-link">Export</a>
-    <a href="/admin.html" class="admin-link">Admin</a>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
+  <nav class="nav-menu" id="navMenu">
+    <a href="/export.html" target="_blank"><span class="nav-icon">🖨️</span> Exporteren</a>
+    <a href="/admin.html"><span class="nav-icon">⚙️</span> Admin</a>
+  </nav>
 </header>
 
 <div class="container">
@@ -448,6 +509,28 @@
       // Re-push if failed
       undoStack.push({ id, reverseDelta });
       syncUndoBtn();
+    }
+  });
+
+  // Hamburger menu
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const navMenu = document.getElementById('navMenu');
+
+  hamburgerBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = navMenu.classList.toggle('open');
+    hamburgerBtn.classList.toggle('open', open);
+  });
+
+  document.addEventListener('click', () => {
+    navMenu.classList.remove('open');
+    hamburgerBtn.classList.remove('open');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      navMenu.classList.remove('open');
+      hamburgerBtn.classList.remove('open');
     }
   });
 
