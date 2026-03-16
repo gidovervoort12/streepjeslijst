@@ -550,9 +550,6 @@
     err.textContent = '';
     try {
       const p = await api('POST', '/api/persons', { name });
-      persons.push(p);
-      persons.sort((a, b) => a.name.localeCompare(b.name, 'nl', { sensitivity: 'base' }));
-      renderPersons();
       input.value = '';
       input.focus();
       showToast(`"${p.name}" toegevoegd`);
@@ -574,8 +571,6 @@
     if (!confirm(`"${person?.name}" verwijderen?`)) return;
     try {
       await api('DELETE', `/api/persons/${id}`);
-      persons = persons.filter(p => p.id != id);
-      renderPersons();
       showToast('Persoon verwijderd');
     } catch (e) { showToast('Fout: ' + e.message); }
   });
@@ -584,8 +579,6 @@
   document.getElementById('resetBtn').addEventListener('click', async () => {
     if (!confirm('Alle streepjes wissen?')) return;
     await api('POST', '/api/reset');
-    persons.forEach(p => p.count = 0);
-    renderPersons();
     showToast('Alle streepjes gewist');
   });
 
@@ -593,8 +586,6 @@
   document.getElementById('clearAllBtn').addEventListener('click', async () => {
     if (!confirm('Alle namen permanent verwijderen?')) return;
     await Promise.all(persons.map(p => api('DELETE', `/api/persons/${p.id}`)));
-    persons = [];
-    renderPersons();
     showToast('Alle namen verwijderd');
   });
 
