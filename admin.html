@@ -444,9 +444,9 @@
   }
 
   async function loadState() {
-    const [state, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
-    price = state.price;
-    persons = state.persons;
+    const [s, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
+    price = s.price;
+    persons = s.persons;
     document.getElementById('priceInput').value = price.toFixed(2);
     document.getElementById('currentPrice').textContent = fmt(price);
     const status = document.getElementById('mollieStatus');
@@ -456,6 +456,21 @@
       status.innerHTML = `<span style="color:var(--danger)">Nog geen sleutel ingesteld. Betalingen zijn uitgeschakeld.</span>`;
     }
     renderPersons();
+    connectSSE();
+  }
+
+  let _es;
+  function connectSSE() {
+    if (_es) _es.close();
+    _es = new EventSource('/api/events');
+    _es.onmessage = e => {
+      const incoming = JSON.parse(e.data);
+      price = incoming.price;
+      persons = incoming.persons;
+      document.getElementById('currentPrice').textContent = fmt(price);
+      renderPersons();
+    };
+    _es.onerror = () => { _es.close(); setTimeout(connectSSE, 3000); };
   }
 
   // Save Mollie key

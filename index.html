@@ -277,10 +277,22 @@
     return r.json();
   }
 
-  async function loadState() {
-    const [s, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
-    state = { ...s, mollieConfigured: mk.configured };
-    render();
+  async function loadMollieFlag() {
+    const mk = await api('GET', '/api/mollie-key');
+    state.mollieConfigured = mk.configured;
+  }
+
+  function connectSSE() {
+    const es = new EventSource('/api/events');
+    es.onmessage = e => {
+      const incoming = JSON.parse(e.data);
+      state = { ...incoming, mollieConfigured: state.mollieConfigured ?? false };
+      render();
+    };
+    es.onerror = () => {
+      es.close();
+      setTimeout(connectSSE, 3000); // reconnect after 3s
+    };
   }
 
   function render() {
@@ -373,7 +385,7 @@
     }
   });
 
-  loadState();
+  loadMollieFlag().then(connectSSE);
 </script>
 </body>
 </html>
