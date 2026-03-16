@@ -226,7 +226,6 @@
 <div class="toolbar">
   <span class="toolbar-title">Streepjes<span>lijst</span> — Export</span>
   <button class="btn btn-primary" id="printBtn">Afdrukken / PDF</button>
-  <button class="btn btn-ghost" id="csvBtn">CSV downloaden</button>
   <a href="/" class="back-link">← Terug</a>
 </div>
 
@@ -316,32 +315,6 @@
   }
 
   document.getElementById('printBtn').addEventListener('click', () => window.print());
-
-  document.getElementById('csvBtn').addEventListener('click', () => {
-    const { price, persons } = exportData;
-    const now = new Date();
-    const lines = [
-      `Streepjeslijst export`,
-      `Datum;${now.toLocaleString('nl-NL')}`,
-      `Prijs per consumptie;${price.toFixed(2)}`,
-      ``,
-      `#;Naam;Consumpties;Bedrag`,
-      ...persons.map((p, i) =>
-        `${i + 1};${p.name};${p.count};${(p.count * price).toFixed(2)}`
-      ),
-      ``,
-      `Totaal;${persons.reduce((s,p) => s + p.count, 0)};${(persons.reduce((s,p) => s + p.count, 0) * price).toFixed(2)}`
-    ];
-
-    const csv = lines.join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `streepjeslijst-${now.toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
 
   load();
 </script>

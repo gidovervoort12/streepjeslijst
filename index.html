@@ -194,6 +194,49 @@
     .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
     .empty a { color: var(--accent); }
 
+    .add-self {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1.25rem;
+    }
+
+    .add-self input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 0;
+    }
+    .add-self input::placeholder { color: var(--text-muted); }
+    .add-self input:focus { border-color: var(--accent); }
+
+    .add-self button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.75rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .add-self button:hover { opacity: 0.85; }
+    .add-self button:active { transform: scale(0.95); }
+
+    .add-self-error {
+      font-size: 0.8rem;
+      color: var(--danger);
+      margin-top: 0.4rem;
+      min-height: 1rem;
+    }
+
     .toast {
       position: fixed;
       bottom: 1.5rem;
@@ -231,6 +274,12 @@
   <div class="person-list" id="personList">
     <div class="empty"><div class="icon">⏳</div>Laden…</div>
   </div>
+
+  <form class="add-self" id="addSelfForm">
+    <input type="text" id="addSelfInput" placeholder="Jouw naam toevoegen…" autocomplete="off" maxlength="30" />
+    <button type="submit">+ Voeg toe</button>
+  </form>
+  <div class="add-self-error" id="addSelfError"></div>
 
   <div id="summarySection" style="display:none">
     <div class="summary">
@@ -368,6 +417,22 @@
       await loadState();
     }
   }, true); // capture so it runs before the tally handler
+
+  document.getElementById('addSelfForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const input = document.getElementById('addSelfInput');
+    const err = document.getElementById('addSelfError');
+    const name = input.value.trim();
+    if (!name) return;
+    err.textContent = '';
+    try {
+      await api('POST', '/api/persons', { name });
+      input.value = '';
+      showToast(`"${name}" toegevoegd`);
+    } catch (ex) {
+      err.textContent = ex.message === 'Name already exists' ? 'Naam staat er al op.' : ex.message;
+    }
+  });
 
   document.getElementById('undoBtn').addEventListener('click', async () => {
     if (!undoStack.length) return;
