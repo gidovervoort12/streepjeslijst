@@ -144,6 +144,12 @@ app.put('/api/mollie-key', (req, res) => {
   res.json({ ok: true });
 });
 
+app.delete('/api/mollie-key', (req, res) => {
+  db.prepare(`UPDATE settings SET value = '' WHERE key = 'mollie_key'`).run();
+  broadcast();
+  res.json({ ok: true });
+});
+
 // --- Payments ---
 
 app.post('/api/payments', async (req, res) => {

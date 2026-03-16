@@ -336,7 +336,10 @@
       <input class="input" type="password" id="mollieKeyInput" placeholder="live_… of test_…" autocomplete="off" />
       <button class="btn btn-primary" id="saveMollieKey">Opslaan</button>
     </div>
-    <div class="current-price" id="mollieStatus" style="margin-top:0.75rem"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;gap:0.75rem">
+      <div class="current-price" id="mollieStatus"></div>
+      <button class="btn-danger-ghost" id="removeMollieKey" style="display:none">Verwijderen</button>
+    </div>
     <div class="error-msg" id="mollieError"></div>
   </div>
 
@@ -449,12 +452,7 @@
     persons = s.persons;
     document.getElementById('priceInput').value = price.toFixed(2);
     document.getElementById('currentPrice').textContent = fmt(price);
-    const status = document.getElementById('mollieStatus');
-    if (mk.configured) {
-      status.innerHTML = `API-sleutel ingesteld: <strong style="color:var(--accent)">${mk.preview}</strong>`;
-    } else {
-      status.innerHTML = `<span style="color:var(--danger)">Nog geen sleutel ingesteld. Betalingen zijn uitgeschakeld.</span>`;
-    }
+    updateMollieUI(mk);
     renderPersons();
     connectSSE();
   }
@@ -473,6 +471,28 @@
     _es.onerror = () => { _es.close(); setTimeout(connectSSE, 3000); };
   }
 
+  function updateMollieUI(mk) {
+    const status = document.getElementById('mollieStatus');
+    const removeBtn = document.getElementById('removeMollieKey');
+    if (mk.configured) {
+      status.innerHTML = `API-sleutel ingesteld: <strong style="color:var(--accent)">${mk.preview}</strong>`;
+      removeBtn.style.display = 'inline-block';
+    } else {
+      status.innerHTML = `<span style="color:var(--danger)">Nog geen sleutel ingesteld. Betalingen zijn uitgeschakeld.</span>`;
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  // Remove Mollie key
+  document.getElementById('removeMollieKey').addEventListener('click', async () => {
+    if (!confirm('Mollie API-sleutel verwijderen? Betalingen worden uitgeschakeld.')) return;
+    try {
+      await api('DELETE', '/api/mollie-key');
+      showToast('Mollie sleutel verwijderd');
+      updateMollieUI({ configured: false });
+    } catch (e) { showToast('Fout: ' + e.message); }
+  });
+
   // Save Mollie key
   document.getElementById('saveMollieKey').addEventListener('click', async () => {
     const key = document.getElementById('mollieKeyInput').value.trim();
@@ -483,7 +503,7 @@
       await api('PUT', '/api/mollie-key', { key });
       document.getElementById('mollieKeyInput').value = '';
       showToast('Mollie sleutel opgeslagen');
-      loadState();
+      updateMollieUI({ configured: true, preview: key.slice(0, 8) + '…' });
     } catch (e) { err.textContent = e.message; }
   });
 
