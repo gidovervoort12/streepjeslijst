@@ -1,0 +1,11 @@
+{
+  "name": "streepjeslijst",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --no-warnings=ExperimentalWarning server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3"
+  }
+}

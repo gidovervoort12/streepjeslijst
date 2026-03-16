@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streepjeslijst</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --accent: #4f8ef7;
+      --accent-dim: #2a4a8a;
+      --danger: #e74c3c;
+      --danger-dim: #6b1e18;
+      --success: #2ecc71;
+      --text: #e8eaf0;
+      --text-muted: #7a7f9a;
+      --border: #2e3248;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: 2rem;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+    header h1 span { color: var(--accent); }
+
+    .price-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.35rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    .price-badge .label { font-size: 0.7rem; color: var(--text-muted); }
+    .price-badge .value { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+
+    .admin-link {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-decoration: none;
+      padding: 0.35rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .admin-link:hover { color: var(--accent); border-color: var(--accent); }
+
+    .container { max-width: 540px; margin: 0 auto; padding: 1.25rem; }
+
+    .person-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .person-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s;
+    }
+
+    .person-card:hover { border-color: var(--accent-dim); }
+
+    .person-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 1.05rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tally-controls { display: flex; align-items: center; gap: 0.5rem; }
+
+    .tally-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.5rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .tally-btn:active { transform: scale(0.88); }
+    .tally-btn.minus { background: var(--danger-dim); color: var(--danger); }
+    .tally-btn.minus:hover { background: var(--danger); color: #fff; }
+    .tally-btn.plus { background: var(--accent-dim); color: var(--accent); }
+    .tally-btn.plus:hover { background: var(--accent); color: #fff; }
+    .tally-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .tally-count { min-width: 2.2rem; text-align: center; font-size: 1.3rem; font-weight: 700; }
+
+    .person-cost { min-width: 4rem; text-align: right; font-size: 0.95rem; font-weight: 600; color: var(--success); }
+
+    .summary {
+      margin-top: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .summary-label { color: var(--text-muted); font-size: 0.9rem; }
+    .summary-total { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+
+    .undo-fab {
+      position: fixed;
+      bottom: 1.75rem;
+      right: 1.25rem;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s, transform 0.15s, background 0.15s;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.8);
+    }
+    .undo-fab.visible { opacity: 1; pointer-events: all; transform: scale(1); }
+    .undo-fab:hover { background: var(--accent-dim); border-color: var(--accent); }
+    .undo-fab:active { transform: scale(0.9); }
+
+    .empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 3rem 1rem;
+      font-size: 0.95rem;
+    }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty a { color: var(--accent); }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(4rem);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: transform 0.25s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Streepjes<span>lijst</span></h1>
+  <div style="display:flex;align-items:center;gap:0.6rem">
+    <div class="price-badge">
+      <span class="label">per consumptie</span>
+      <span class="value" id="priceDisplay">…</span>
+    </div>
+    <a href="/admin.html" class="admin-link">Admin</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="person-list" id="personList">
+    <div class="empty"><div class="icon">⏳</div>Laden…</div>
+  </div>
+
+  <div id="summarySection" style="display:none">
+    <div class="summary">
+      <div>
+        <div class="summary-label">Totaal consumpties</div>
+        <div id="totalDrinks" style="font-size:1.1rem;font-weight:700;margin-top:0.2rem">0</div>
+      </div>
+      <div style="text-align:right">
+        <div class="summary-label">Totaal bedrag</div>
+        <div class="summary-total" id="totalAmount">€0,00</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="undo-fab" id="undoBtn" title="Ongedaan maken">↩</button>
+<div class="toast" id="toast"></div>
+
+<script>
+  let state = { price: 0, persons: [] };
+  const undoStack = []; // [{ id, reverseDelta }]
+
+  const fmt = n => '€' + n.toFixed(2).replace('.', ',');
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function syncUndoBtn() {
+    document.getElementById('undoBtn').classList.toggle('visible', undoStack.length > 0);
+  }
+
+  async function api(method, path, body) {
+    const r = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  async function loadState() {
+    state = await api('GET', '/api/state');
+    render();
+  }
+
+  function render() {
+    document.getElementById('priceDisplay').textContent = fmt(state.price);
+    const list = document.getElementById('personList');
+    const summary = document.getElementById('summarySection');
+
+    if (!state.persons.length) {
+      list.innerHTML = `<div class="empty"><div class="icon">🍺</div>Geen namen op de lijst.<br><a href="/admin.html">Voeg namen toe via Admin</a>.</div>`;
+      summary.style.display = 'none';
+      return;
+    }
+
+    list.innerHTML = state.persons.map(p => `
+      <div class="person-card">
+        <span class="person-name">${esc(p.name)}</span>
+        <div class="tally-controls">
+          <button class="tally-btn minus" data-id="${p.id}" data-action="dec" ${p.count === 0 ? 'disabled' : ''}>−</button>
+          <span class="tally-count">${p.count}</span>
+          <button class="tally-btn plus" data-id="${p.id}" data-action="inc">+</button>
+        </div>
+        <span class="person-cost">${fmt(p.count * state.price)}</span>
+      </div>
+    `).join('');
+
+    const drinks = state.persons.reduce((s, p) => s + p.count, 0);
+    document.getElementById('totalDrinks').textContent = drinks + (drinks === 1 ? ' consumptie' : ' consumpties');
+    document.getElementById('totalAmount').textContent = fmt(drinks * state.price);
+    summary.style.display = 'block';
+  }
+
+  document.getElementById('personList').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || btn.disabled) return;
+    const id = btn.dataset.id;
+    const delta = btn.dataset.action === 'inc' ? 1 : -1;
+    try {
+      const updated = await api('PATCH', `/api/persons/${id}`, { delta });
+      const p = state.persons.find(x => x.id == id);
+      if (p) {
+        // Only push undo if the count actually changed
+        if (updated.count !== p.count) {
+          undoStack.push({ id, reverseDelta: -delta });
+          syncUndoBtn();
+        }
+        p.count = updated.count;
+        render();
+      }
+    } catch {}
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', async () => {
+    if (!undoStack.length) return;
+    const { id, reverseDelta } = undoStack.pop();
+    syncUndoBtn();
+    try {
+      const updated = await api('PATCH', `/api/persons/${id}`, { delta: reverseDelta });
+      const p = state.persons.find(x => x.id == id);
+      if (p) { p.count = updated.count; render(); }
+      const name = state.persons.find(x => x.id == id)?.name ?? '';
+      showToast(`Ongedaan: ${reverseDelta > 0 ? '+' : ''}${reverseDelta} voor ${name}`);
+    } catch {
+      // Re-push if failed
+      undoStack.push({ id, reverseDelta });
+      syncUndoBtn();
+    }
+  });
+
+  loadState();
+</script>
+</body>
+</html>
