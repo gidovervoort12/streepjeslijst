@@ -145,6 +145,53 @@
     }
 
     .person-card:hover { border-color: var(--accent-dim); }
+    .person-card.pinned {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--surface) 0%, #1e2540 100%);
+    }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .search-wrap .search-icon {
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { border-color: var(--accent); }
+
+    /* Pin button */
+    .pin-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: 0.3;
+      padding: 0.2rem;
+      transition: opacity 0.15s, transform 0.15s;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .pin-btn:hover { opacity: 0.7; transform: rotate(-30deg); }
+    .person-card.pinned .pin-btn { opacity: 1; transform: rotate(-30deg); }
 
     .person-name {
       flex: 1;
@@ -332,6 +379,10 @@
 </header>
 
 <div class="container">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="search" id="searchInput" placeholder="Zoek een naam…" autocomplete="off" />
+  </div>
   <div class="person-list" id="personList">
     <div class="empty"><div class="icon">⏳</div>Laden…</div>
   </div>
@@ -365,6 +416,50 @@
 
   const fmt = n => '€' + n.toFixed(2).replace('.', ',');
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  // --- Pin (per device via localStorage) ---
+  const PIN_KEY = 'streepjeslijst_pinned';
+  let pinnedId = localStorage.getItem(PIN_KEY) ? parseInt(localStorage.getItem(PIN_KEY)) : null;
+
+  function setPinned(id) {
+    if (pinnedId === id) {
+      pinnedId = null;
+      localStorage.removeItem(PIN_KEY);
+    } else {
+      pinnedId = id;
+      localStorage.setItem(PIN_KEY, String(id));
+    }
+    render();
+  }
+
+  // --- Search & fuzzy match ---
+  let searchQuery = '';
+
+  function normalize(s) {
+    return s.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9 ]/g, '');
+  }
+
+  function fuzzyMatch(needle, haystack) {
+    const n = normalize(needle);
+    const h = normalize(haystack);
+    if (!n) return true;
+    if (h.includes(n)) return true;
+    if (n.length < 2) return false;
+    // tolerate 1 missing/wrong character
+    for (let i = 0; i < n.length; i++) {
+      if (h.includes(n.slice(0, i) + n.slice(i + 1))) return true;
+    }
+    for (let i = 0; i <= h.length - n.length; i++) {
+      let diffs = 0;
+      for (let j = 0; j < n.length; j++) {
+        if (h[i + j] !== n[j] && ++diffs > 1) break;
+      }
+      if (diffs <= 1) return true;
+    }
+    return false;
+  }
 
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -417,25 +512,42 @@
       return;
     }
 
-    list.innerHTML = state.persons.map(p => {
-      const hasPending = p.payment && p.payment.status !== 'paid';
-      const payBtn = p.count > 0 && state.mollieConfigured
-        ? `<button class="pay-btn ${hasPending ? 'pending' : ''}" data-id="${p.id}" data-action="pay" ${hasPending ? 'disabled title="Betaling loopt…"' : ''}>
-            ${hasPending ? '⏳ Bezig…' : 'iDEAL ' + fmt(p.count * state.price)}
-           </button>`
-        : '';
-      return `
-      <div class="person-card">
-        <span class="person-name">${esc(p.name)}</span>
-        <div class="tally-controls">
-          <button class="tally-btn minus" data-id="${p.id}" data-action="dec" ${p.count === 0 ? 'disabled' : ''}>−</button>
-          <span class="tally-count">${p.count}</span>
-          <button class="tally-btn plus" data-id="${p.id}" data-action="inc">+</button>
-        </div>
-        <span class="person-cost">${fmt(p.count * state.price)}</span>
-        ${payBtn}
-      </div>`;
-    }).join('');
+    // Sort: pinned first, then alphabetical
+    const sorted = [...state.persons].sort((a, b) => {
+      if (a.id === pinnedId) return -1;
+      if (b.id === pinnedId) return 1;
+      return a.name.localeCompare(b.name, 'nl');
+    });
+
+    // Filter by search query
+    const filtered = searchQuery ? sorted.filter(p => fuzzyMatch(searchQuery, p.name)) : sorted;
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty" style="padding:1.5rem">Geen resultaten voor "<strong>${esc(searchQuery)}</strong>"</div>`;
+      summary.style.display = 'block';
+    } else {
+      list.innerHTML = filtered.map(p => {
+        const pinned = p.id === pinnedId;
+        const hasPending = p.payment && p.payment.status !== 'paid';
+        const payBtn = p.count > 0 && state.mollieConfigured
+          ? `<button class="pay-btn ${hasPending ? 'pending' : ''}" data-id="${p.id}" data-action="pay" ${hasPending ? 'disabled title="Betaling loopt…"' : ''}>
+              ${hasPending ? '⏳ Bezig…' : 'iDEAL ' + fmt(p.count * state.price)}
+             </button>`
+          : '';
+        return `
+        <div class="person-card ${pinned ? 'pinned' : ''}">
+          <button class="pin-btn" data-action="pin" data-id="${p.id}" title="${pinned ? 'Losmaken' : 'Vastzetten'}">📌</button>
+          <span class="person-name">${esc(p.name)}</span>
+          <div class="tally-controls">
+            <button class="tally-btn minus" data-id="${p.id}" data-action="dec" ${p.count === 0 ? 'disabled' : ''}>−</button>
+            <span class="tally-count">${p.count}</span>
+            <button class="tally-btn plus" data-id="${p.id}" data-action="inc">+</button>
+          </div>
+          <span class="person-cost">${fmt(p.count * state.price)}</span>
+          ${payBtn}
+        </div>`;
+      }).join('');
+    }
 
     const drinks = state.persons.reduce((s, p) => s + p.count, 0);
     document.getElementById('totalDrinks').textContent = drinks + (drinks === 1 ? ' consumptie' : ' consumpties');
@@ -443,16 +555,21 @@
     summary.style.display = 'block';
   }
 
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQuery = e.target.value.trim();
+    render();
+  });
+
   document.getElementById('personList').addEventListener('click', async e => {
     const btn = e.target.closest('[data-action]');
     if (!btn || btn.disabled) return;
-    const id = btn.dataset.id;
+    const id = parseInt(btn.dataset.id);
+    if (btn.dataset.action === 'pin') { setPinned(id); return; }
     const delta = btn.dataset.action === 'inc' ? 1 : -1;
     try {
       const updated = await api('PATCH', `/api/persons/${id}`, { delta });
-      const p = state.persons.find(x => x.id == id);
+      const p = state.persons.find(x => x.id === id);
       if (p) {
-        // Only push undo if the count actually changed
         if (updated.count !== p.count) {
           undoStack.push({ id, reverseDelta: -delta });
           syncUndoBtn();
