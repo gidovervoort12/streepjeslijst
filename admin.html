@@ -199,6 +199,87 @@
       padding: 1.5rem 0 0.5rem;
     }
 
+    /* Snapshots */
+    .snapshot-entry {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-top: 0.6rem;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .snapshot-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.7rem 0.9rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .snapshot-header:hover { background: rgba(255,255,255,0.03); }
+
+    .snapshot-label {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .snapshot-total {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .snapshot-chevron {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .snapshot-entry.open .snapshot-chevron { transform: rotate(180deg); }
+
+    .snapshot-body {
+      display: none;
+      padding: 0 0.9rem 0.9rem;
+      border-top: 1px solid var(--border);
+    }
+    .snapshot-entry.open .snapshot-body { display: block; }
+
+    .snapshot-persons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin: 0.65rem 0 0.75rem;
+    }
+
+    .snapshot-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .snapshot-pill .pill-count { color: var(--accent); font-weight: 700; }
+
+    .btn-restore {
+      background: var(--success);
+      color: #111;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-restore:hover { opacity: 0.85; }
+
     /* Danger zone */
     .danger-zone {
       border-color: var(--danger-dim);
@@ -369,6 +450,15 @@
     </div>
   </div>
 
+  <!-- Geschiedenis -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div class="section-title" style="margin-bottom:0">Geschiedenis (7 dagen)</div>
+      <button class="btn btn-primary" id="takeSnapshotBtn" style="font-size:0.8rem;padding:0.45rem 0.8rem">+ Momentopname</button>
+    </div>
+    <div id="snapshotList"><div class="empty-list">Geen momentopnames gevonden.</div></div>
+  </div>
+
   <!-- Danger zone -->
   <div class="section danger-zone">
     <div class="section-title">Beheeracties</div>
@@ -384,6 +474,60 @@
 </div><!-- end page-content -->
 
 <script>
+  // --- Snapshots ---
+  function renderSnapshots(snapshots) {
+    const list = document.getElementById('snapshotList');
+    if (!snapshots.length) {
+      list.innerHTML = '<div class="empty-list">Geen momentopnames gevonden.</div>';
+      return;
+    }
+    list.innerHTML = snapshots.map(s => {
+      const total = s.persons.reduce((n, p) => n + p.count, 0);
+      const pills = s.persons
+        .filter(p => p.count > 0)
+        .map(p => `<span class="snapshot-pill">${esc(p.name)} <span class="pill-count">${p.count}</span></span>`)
+        .join('');
+      return `
+        <div class="snapshot-entry" data-id="${s.id}">
+          <div class="snapshot-header">
+            <span class="snapshot-label">${esc(s.label)}</span>
+            <span class="snapshot-total">${total} streepje${total !== 1 ? 's' : ''}</span>
+            <span class="snapshot-chevron">▼</span>
+          </div>
+          <div class="snapshot-body">
+            <div class="snapshot-persons">${pills || '<span style="color:var(--text-muted);font-size:0.85rem">Geen streepjes</span>'}</div>
+            <button class="btn-restore" data-restore="${s.id}">↩ Herstel deze stand</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Toggle snapshot expand
+  document.getElementById('snapshotList').addEventListener('click', async e => {
+    const restoreBtn = e.target.closest('[data-restore]');
+    if (restoreBtn) {
+      const id = restoreBtn.dataset.restore;
+      if (!confirm('Streepjes herstellen naar deze momentopname?')) return;
+      try {
+        await api('POST', `/api/snapshots/${id}/restore`);
+        showToast('Stand hersteld');
+      } catch (err) { showToast('Fout: ' + err.message); }
+      return;
+    }
+    const header = e.target.closest('.snapshot-header');
+    if (header) {
+      header.closest('.snapshot-entry').classList.toggle('open');
+    }
+  });
+
+  // Manual snapshot
+  document.getElementById('takeSnapshotBtn').addEventListener('click', async () => {
+    try {
+      await api('POST', '/api/snapshots', {});
+      showToast('Momentopname opgeslagen');
+    } catch (err) { showToast('Fout: ' + err.message); }
+  });
+
   // --- Password gate ---
   const ADMIN_PW = '123qwe123';
   const SESSION_KEY = 'adminUnlocked';
@@ -454,6 +598,7 @@
     document.getElementById('currentPrice').textContent = fmt(price);
     updateMollieUI(mk);
     renderPersons();
+    renderSnapshots(s.snapshots || []);
     connectSSE();
   }
 
@@ -467,6 +612,7 @@
       persons = incoming.persons;
       document.getElementById('currentPrice').textContent = fmt(price);
       renderPersons();
+      renderSnapshots(incoming.snapshots || []);
     };
     _es.onerror = () => { _es.close(); setTimeout(connectSSE, 3000); };
   }

@@ -27,12 +27,23 @@ db.exec(`
     status     TEXT NOT NULL DEFAULT 'open',
     created_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS snapshots (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    taken_at INTEGER NOT NULL,
+    label    TEXT NOT NULL,
+    data     TEXT NOT NULL
+  );
   INSERT OR IGNORE INTO settings (key, value) VALUES ('price', '2.50');
   INSERT OR IGNORE INTO settings (key, value) VALUES ('mollie_key', '');
 `);
 
 // --- Helpers ---
 const getPrice = () => parseFloat(db.prepare(`SELECT value FROM settings WHERE key='price'`).get().value);
+
+function getSnapshots() {
+  return db.prepare('SELECT id, taken_at, label, data FROM snapshots ORDER BY taken_at DESC LIMIT 7').all()
+    .map(s => ({ id: s.id, taken_at: s.taken_at, label: s.label, persons: JSON.parse(s.data) }));
+}
 
 function getState() {
   const price = getPrice();
@@ -42,7 +53,11 @@ function getState() {
   for (const p of openPayments) {
     if (!paymentByPerson[p.person_id]) paymentByPerson[p.person_id] = p;
   }
-  return { price, persons: persons.map(p => ({ ...p, payment: paymentByPerson[p.id] || null })) };
+  return {
+    price,
+    persons: persons.map(p => ({ ...p, payment: paymentByPerson[p.id] || null })),
+    snapshots: getSnapshots(),
+  };
 }
 
 function getMollie() {
@@ -72,10 +87,7 @@ app.get('/api/events', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
-
-  // Send current state immediately on connect
   res.write(`data: ${JSON.stringify(getState())}\n\n`);
-
   sseClients.add(res);
   req.on('close', () => sseClients.delete(res));
 });
@@ -125,6 +137,81 @@ app.put('/api/price', (req, res) => {
 // Reset all tallies
 app.post('/api/reset', (req, res) => {
   db.prepare('UPDATE persons SET count = 0').run();
+  broadcast();
+  res.json({ ok: true });
+});
+
+// --- Snapshots ---
+
+function takeSnapshot(label) {
+  const persons = db.prepare('SELECT id, name, count FROM persons ORDER BY name COLLATE NOCASE').all();
+  const data = JSON.stringify(persons);
+  const now = Date.now();
+  const finalLabel = label || formatSnapshotLabel(now);
+  db.prepare('INSERT INTO snapshots (taken_at, label, data) VALUES (?, ?, ?)').run(now, finalLabel, data);
+  // Keep only the last 7
+  db.prepare(`
+    DELETE FROM snapshots WHERE id NOT IN (
+      SELECT id FROM snapshots ORDER BY taken_at DESC LIMIT 7
+    )
+  `).run();
+  broadcast();
+  console.log(`[snapshot] ${finalLabel}`);
+}
+
+function formatSnapshotLabel(ts) {
+  return new Date(ts).toLocaleString('nl-NL', {
+    timeZone: 'Europe/Amsterdam',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// Check whether a daily 05:00 snapshot is still due today
+function dailySnapshotDue() {
+  const now = new Date();
+  const today5am = new Date(now);
+  today5am.setHours(5, 0, 0, 0);
+  if (now < today5am) return false; // before 05:00 today
+
+  const last = db.prepare('SELECT taken_at FROM snapshots ORDER BY taken_at DESC LIMIT 1').get();
+  if (!last) return true;
+
+  const lastDate = new Date(last.taken_at);
+  const lastDay5am = new Date(lastDate);
+  lastDay5am.setHours(5, 0, 0, 0);
+  // Due if last snapshot was taken before today's 05:00
+  return last.taken_at < today5am.getTime();
+}
+
+// Take snapshot on startup if due
+if (dailySnapshotDue()) takeSnapshot();
+
+// Check every minute; fire at 05:00
+setInterval(() => {
+  const now = new Date();
+  if (now.getHours() === 5 && now.getMinutes() === 0 && dailySnapshotDue()) {
+    takeSnapshot();
+  }
+}, 60 * 1000);
+
+// Manual snapshot
+app.post('/api/snapshots', (req, res) => {
+  const label = (req.body.label || '').trim() || formatSnapshotLabel(Date.now()) + ' (handmatig)';
+  takeSnapshot(label);
+  res.json({ ok: true });
+});
+
+// Restore snapshot
+app.post('/api/snapshots/:id/restore', (req, res) => {
+  const snapshot = db.prepare('SELECT data FROM snapshots WHERE id = ?').get(req.params.id);
+  if (!snapshot) return res.status(404).json({ error: 'Snapshot not found' });
+
+  const saved = JSON.parse(snapshot.data);
+  // Restore counts by name (robust against id changes)
+  for (const entry of saved) {
+    db.prepare('UPDATE persons SET count = ? WHERE name = ? COLLATE NOCASE').run(entry.count, entry.name);
+  }
   broadcast();
   res.json({ ok: true });
 });
