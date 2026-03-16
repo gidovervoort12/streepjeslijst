@@ -126,6 +126,24 @@
 
     .person-cost { min-width: 4rem; text-align: right; font-size: 0.95rem; font-weight: 600; color: var(--success); }
 
+    .pay-btn {
+      background: #d4370a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.3px;
+    }
+    .pay-btn:hover { opacity: 0.85; }
+    .pay-btn:active { transform: scale(0.94); }
+    .pay-btn:disabled { opacity: 0.4; cursor: default; }
+    .pay-btn.pending { background: var(--text-muted); }
+
     .summary {
       margin-top: 2rem;
       background: var(--surface);
@@ -260,7 +278,8 @@
   }
 
   async function loadState() {
-    state = await api('GET', '/api/state');
+    const [s, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
+    state = { ...s, mollieConfigured: mk.configured };
     render();
   }
 
@@ -275,7 +294,14 @@
       return;
     }
 
-    list.innerHTML = state.persons.map(p => `
+    list.innerHTML = state.persons.map(p => {
+      const hasPending = p.payment && p.payment.status !== 'paid';
+      const payBtn = p.count > 0 && state.mollieConfigured
+        ? `<button class="pay-btn ${hasPending ? 'pending' : ''}" data-id="${p.id}" data-action="pay" ${hasPending ? 'disabled title="Betaling loopt…"' : ''}>
+            ${hasPending ? '⏳ Bezig…' : 'iDEAL ' + fmt(p.count * state.price)}
+           </button>`
+        : '';
+      return `
       <div class="person-card">
         <span class="person-name">${esc(p.name)}</span>
         <div class="tally-controls">
@@ -284,8 +310,9 @@
           <button class="tally-btn plus" data-id="${p.id}" data-action="inc">+</button>
         </div>
         <span class="person-cost">${fmt(p.count * state.price)}</span>
-      </div>
-    `).join('');
+        ${payBtn}
+      </div>`;
+    }).join('');
 
     const drinks = state.persons.reduce((s, p) => s + p.count, 0);
     document.getElementById('totalDrinks').textContent = drinks + (drinks === 1 ? ' consumptie' : ' consumpties');
@@ -312,6 +339,22 @@
       }
     } catch {}
   });
+
+  document.getElementById('personList').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-action="pay"]');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Laden…';
+    try {
+      const { checkoutUrl, paymentId } = await api('POST', '/api/payments', { personId: btn.dataset.id });
+      // Store paymentId so return page can use it
+      sessionStorage.setItem('lastPaymentId', paymentId);
+      window.location.href = checkoutUrl;
+    } catch (e) {
+      showToast('Fout: ' + e.message);
+      await loadState();
+    }
+  }, true); // capture so it runs before the tally handler
 
   document.getElementById('undoBtn').addEventListener('click', async () => {
     if (!undoStack.length) return;

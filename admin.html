@@ -329,6 +329,17 @@
 
 <div class="container">
 
+  <!-- Mollie -->
+  <div class="section" id="mollieSection">
+    <div class="section-title">iDEAL betalingen (Mollie)</div>
+    <div class="add-row">
+      <input class="input" type="password" id="mollieKeyInput" placeholder="live_… of test_…" autocomplete="off" />
+      <button class="btn btn-primary" id="saveMollieKey">Opslaan</button>
+    </div>
+    <div class="current-price" id="mollieStatus" style="margin-top:0.75rem"></div>
+    <div class="error-msg" id="mollieError"></div>
+  </div>
+
   <!-- Price -->
   <div class="section">
     <div class="section-title">Prijs per consumptie</div>
@@ -433,13 +444,33 @@
   }
 
   async function loadState() {
-    const state = await api('GET', '/api/state');
+    const [state, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
     price = state.price;
     persons = state.persons;
     document.getElementById('priceInput').value = price.toFixed(2);
     document.getElementById('currentPrice').textContent = fmt(price);
+    const status = document.getElementById('mollieStatus');
+    if (mk.configured) {
+      status.innerHTML = `API-sleutel ingesteld: <strong style="color:var(--accent)">${mk.preview}</strong>`;
+    } else {
+      status.innerHTML = `<span style="color:var(--danger)">Nog geen sleutel ingesteld. Betalingen zijn uitgeschakeld.</span>`;
+    }
     renderPersons();
   }
+
+  // Save Mollie key
+  document.getElementById('saveMollieKey').addEventListener('click', async () => {
+    const key = document.getElementById('mollieKeyInput').value.trim();
+    const err = document.getElementById('mollieError');
+    if (!key) { err.textContent = 'Voer een API-sleutel in.'; return; }
+    err.textContent = '';
+    try {
+      await api('PUT', '/api/mollie-key', { key });
+      document.getElementById('mollieKeyInput').value = '';
+      showToast('Mollie sleutel opgeslagen');
+      loadState();
+    } catch (e) { err.textContent = e.message; }
+  });
 
   function renderPersons() {
     const list = document.getElementById('personsList');
