@@ -60,15 +60,27 @@
 
     .container { max-width: 540px; margin: 0 auto; padding: 1.25rem; }
 
-    /* Section */
+    /* Collapsible section */
     .section {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1.25rem;
       margin-bottom: 1.25rem;
       box-shadow: var(--shadow);
+      overflow: hidden;
     }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      user-select: none;
+      gap: 0.75rem;
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: rgba(255,255,255,0.03); }
 
     .section-title {
       font-size: 0.7rem;
@@ -76,21 +88,38 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--text-muted);
-      margin-bottom: 1rem;
+      flex: 1;
     }
 
-    /* Price form */
+    .section-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-chevron {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .section.collapsed .section-chevron { transform: rotate(-90deg); }
+
+    .section-body {
+      padding: 0 1.25rem 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .section.collapsed .section-body { display: none; }
+
+    /* Forms */
     .price-row {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      padding-top: 1rem;
     }
 
-    .price-row label {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
+    .price-row label { color: var(--text-muted); font-size: 0.9rem; white-space: nowrap; }
 
     .input {
       flex: 1;
@@ -104,7 +133,6 @@
       transition: border-color 0.15s;
       min-width: 0;
     }
-
     .input::placeholder { color: var(--text-muted); }
     .input:focus { border-color: var(--accent); }
 
@@ -121,6 +149,8 @@
     .btn:active { transform: scale(0.96); }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { opacity: 0.85; }
+    .btn-sm { padding: 0.45rem 0.8rem; font-size: 0.82rem; }
+
     .btn-danger-ghost {
       background: none;
       border: 1px solid var(--danger-dim);
@@ -128,29 +158,17 @@
       padding: 0.4rem 0.7rem;
       border-radius: 8px;
       font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s;
     }
     .btn-danger-ghost:hover { background: var(--danger-dim); }
 
-    .current-price {
-      margin-top: 0.75rem;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
+    .current-price { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem; }
     .current-price strong { color: var(--accent); }
 
-    /* Add person */
-    .add-row {
-      display: flex;
-      gap: 0.6rem;
-    }
+    .add-row { display: flex; gap: 0.6rem; padding-top: 1rem; }
 
-    /* Person list */
-    .persons-table {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
+    .persons-table { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
 
     .person-row {
       display: flex;
@@ -162,7 +180,6 @@
       border-radius: 10px;
       transition: border-color 0.15s;
     }
-
     .person-row:hover { border-color: var(--accent-dim); }
 
     .person-row-name {
@@ -174,11 +191,7 @@
       white-space: nowrap;
     }
 
-    .person-row-count {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
+    .person-row-count { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
 
     .remove-btn {
       background: none;
@@ -206,7 +219,6 @@
       border-radius: 10px;
       margin-top: 0.6rem;
       overflow: hidden;
-      transition: border-color 0.15s;
     }
 
     .snapshot-header {
@@ -216,8 +228,9 @@
       padding: 0.7rem 0.9rem;
       cursor: pointer;
       user-select: none;
+      border: none;
+      background: none;
     }
-
     .snapshot-header:hover { background: rgba(255,255,255,0.03); }
 
     .snapshot-label {
@@ -227,24 +240,22 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      text-align: left;
     }
 
-    .snapshot-total {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
+    .snapshot-total { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
 
     .snapshot-chevron {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
       transition: transform 0.2s;
+      flex-shrink: 0;
     }
     .snapshot-entry.open .snapshot-chevron { transform: rotate(180deg); }
 
     .snapshot-body {
       display: none;
-      padding: 0 0.9rem 0.9rem;
+      padding: 0.75rem 0.9rem 0.9rem;
       border-top: 1px solid var(--border);
     }
     .snapshot-entry.open .snapshot-body { display: block; }
@@ -253,7 +264,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.35rem;
-      margin: 0.65rem 0 0.75rem;
+      margin-bottom: 0.85rem;
     }
 
     .snapshot-pill {
@@ -264,8 +275,9 @@
       font-size: 0.8rem;
       white-space: nowrap;
     }
-
     .snapshot-pill .pill-count { color: var(--accent); font-weight: 700; }
+
+    .snapshot-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
     .btn-restore {
       background: var(--success);
@@ -281,19 +293,12 @@
     .btn-restore:hover { opacity: 0.85; }
 
     /* Danger zone */
-    .danger-zone {
-      border-color: var(--danger-dim);
-    }
+    .section.danger-zone { border-color: var(--danger-dim); }
+    .section.danger-zone .section-title { color: var(--danger); }
 
-    .danger-zone .section-title { color: var(--danger); }
+    .danger-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; padding-top: 1rem; }
 
-    .danger-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-      font-size: 0.9rem;
-    }
+    .btn-danger { background: var(--danger); color: #fff; font-size: 0.9rem; }
     .btn-danger:hover { opacity: 0.85; }
 
     /* Toast */
@@ -315,12 +320,7 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
-    .error-msg {
-      font-size: 0.8rem;
-      color: var(--danger);
-      margin-top: 0.4rem;
-      min-height: 1rem;
-    }
+    .error-msg { font-size: 0.8rem; color: var(--danger); margin-top: 0.5rem; min-height: 1rem; }
 
     /* Password gate */
     .pw-gate {
@@ -364,12 +364,7 @@
     }
     .pw-input:focus { border-color: var(--accent); }
 
-    .pw-error {
-      font-size: 0.8rem;
-      color: var(--danger);
-      min-height: 1.1rem;
-      margin-bottom: 0.75rem;
-    }
+    .pw-error { font-size: 0.8rem; color: var(--danger); min-height: 1.1rem; margin-bottom: 0.75rem; }
 
     .pw-btn {
       width: 100%;
@@ -410,61 +405,85 @@
 
 <div class="container">
 
-  <!-- Mollie -->
-  <div class="section" id="mollieSection">
-    <div class="section-title">iDEAL betalingen (Mollie)</div>
-    <div class="add-row">
-      <input class="input" type="password" id="mollieKeyInput" placeholder="live_… of test_…" autocomplete="off" />
-      <button class="btn btn-primary" id="saveMollieKey">Opslaan</button>
+  <!-- iDEAL / Mollie -->
+  <div class="section" id="sec-mollie">
+    <div class="section-header" data-sec="sec-mollie">
+      <span class="section-title">iDEAL betalingen (Mollie)</span>
+      <span class="section-chevron">▼</span>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;gap:0.75rem">
-      <div class="current-price" id="mollieStatus"></div>
-      <button class="btn-danger-ghost" id="removeMollieKey" style="display:none">Verwijderen</button>
+    <div class="section-body">
+      <div class="add-row">
+        <input class="input" type="password" id="mollieKeyInput" placeholder="live_… of test_…" autocomplete="off" />
+        <button class="btn btn-primary" id="saveMollieKey">Opslaan</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;gap:0.75rem">
+        <div class="current-price" id="mollieStatus" style="margin-top:0"></div>
+        <button class="btn-danger-ghost" id="removeMollieKey" style="display:none">Verwijderen</button>
+      </div>
+      <div class="error-msg" id="mollieError"></div>
     </div>
-    <div class="error-msg" id="mollieError"></div>
   </div>
 
-  <!-- Price -->
-  <div class="section">
-    <div class="section-title">Prijs per consumptie</div>
-    <div class="price-row">
-      <label for="priceInput">€</label>
-      <input class="input" type="number" id="priceInput" min="0" step="0.10" placeholder="2.50" />
-      <button class="btn btn-primary" id="savePrice">Opslaan</button>
+  <!-- Prijs -->
+  <div class="section" id="sec-price">
+    <div class="section-header" data-sec="sec-price">
+      <span class="section-title">Prijs per consumptie</span>
+      <span class="section-chevron">▼</span>
     </div>
-    <div class="current-price">Huidige prijs: <strong id="currentPrice">…</strong></div>
-    <div class="error-msg" id="priceError"></div>
+    <div class="section-body">
+      <div class="price-row">
+        <label for="priceInput">€</label>
+        <input class="input" type="number" id="priceInput" min="0" step="0.10" placeholder="2.50" />
+        <button class="btn btn-primary" id="savePrice">Opslaan</button>
+      </div>
+      <div class="current-price">Huidige prijs: <strong id="currentPrice">…</strong></div>
+      <div class="error-msg" id="priceError"></div>
+    </div>
   </div>
 
-  <!-- Add persons -->
-  <div class="section">
-    <div class="section-title">Namen beheren</div>
-    <div class="add-row">
-      <input class="input" type="text" id="nameInput" placeholder="Naam toevoegen…" autocomplete="off" maxlength="30" />
-      <button class="btn btn-primary" id="addBtn">+ Voeg toe</button>
+  <!-- Namen -->
+  <div class="section" id="sec-names">
+    <div class="section-header" data-sec="sec-names">
+      <span class="section-title">Namen beheren</span>
+      <span class="section-chevron">▼</span>
     </div>
-    <div class="error-msg" id="nameError"></div>
-
-    <div class="persons-table" id="personsList">
-      <div class="empty-list">Laden…</div>
+    <div class="section-body">
+      <div class="add-row">
+        <input class="input" type="text" id="nameInput" placeholder="Naam toevoegen…" autocomplete="off" maxlength="30" />
+        <button class="btn btn-primary" id="addBtn">+ Voeg toe</button>
+      </div>
+      <div class="error-msg" id="nameError"></div>
+      <div class="persons-table" id="personsList">
+        <div class="empty-list">Laden…</div>
+      </div>
     </div>
   </div>
 
   <!-- Geschiedenis -->
-  <div class="section">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <div class="section-title" style="margin-bottom:0">Geschiedenis (7 dagen)</div>
-      <button class="btn btn-primary" id="takeSnapshotBtn" style="font-size:0.8rem;padding:0.45rem 0.8rem">+ Momentopname</button>
+  <div class="section" id="sec-history">
+    <div class="section-header" data-sec="sec-history">
+      <span class="section-title">Geschiedenis (7 dagen)</span>
+      <div class="section-header-right">
+        <button class="btn btn-primary btn-sm" id="takeSnapshotBtn">+ Momentopname</button>
+        <span class="section-chevron">▼</span>
+      </div>
     </div>
-    <div id="snapshotList"><div class="empty-list">Geen momentopnames gevonden.</div></div>
+    <div class="section-body">
+      <div id="snapshotList"><div class="empty-list">Geen momentopnames gevonden.</div></div>
+    </div>
   </div>
 
-  <!-- Danger zone -->
-  <div class="section danger-zone">
-    <div class="section-title">Beheeracties</div>
-    <div class="danger-actions">
-      <button class="btn btn-danger-ghost" id="resetBtn">Alle streepjes wissen</button>
-      <button class="btn btn-danger" id="clearAllBtn">Alle namen verwijderen</button>
+  <!-- Beheeracties -->
+  <div class="section danger-zone" id="sec-danger">
+    <div class="section-header" data-sec="sec-danger">
+      <span class="section-title">Beheeracties</span>
+      <span class="section-chevron">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="danger-actions">
+        <button class="btn btn-danger-ghost" id="resetBtn">Alle streepjes wissen</button>
+        <button class="btn btn-danger" id="clearAllBtn">Alle namen verwijderen</button>
+      </div>
     </div>
   </div>
 
@@ -474,6 +493,196 @@
 </div><!-- end page-content -->
 
 <script>
+  const fmt = n => '€' + n.toFixed(2).replace('.', ',');
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  let persons = [];
+  let price = 0;
+
+  // --- Toast ---
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // --- API ---
+  async function api(method, path, body) {
+    const r = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Fout');
+    return data;
+  }
+
+  // --- Collapsible sections ---
+  const COLLAPSED_KEY = 'adminCollapsed';
+
+  function getCollapsed() {
+    try { return new Set(JSON.parse(sessionStorage.getItem(COLLAPSED_KEY)) || []); }
+    catch { return new Set(); }
+  }
+
+  function saveCollapsed(set) {
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify([...set]));
+  }
+
+  function initSections() {
+    const collapsed = getCollapsed();
+    document.querySelectorAll('.section').forEach(sec => {
+      if (collapsed.has(sec.id)) sec.classList.add('collapsed');
+    });
+
+    document.querySelectorAll('.section-header[data-sec]').forEach(header => {
+      header.addEventListener('click', e => {
+        // Don't collapse when clicking a button inside the header
+        if (e.target.closest('button')) return;
+        const sec = document.getElementById(header.dataset.sec);
+        sec.classList.toggle('collapsed');
+        const collapsed = getCollapsed();
+        if (sec.classList.contains('collapsed')) collapsed.add(sec.id);
+        else collapsed.delete(sec.id);
+        saveCollapsed(collapsed);
+      });
+    });
+  }
+
+  // --- Load state ---
+  async function loadState() {
+    const [s, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
+    price = s.price;
+    persons = s.persons;
+    document.getElementById('priceInput').value = price.toFixed(2);
+    document.getElementById('currentPrice').textContent = fmt(price);
+    updateMollieUI(mk);
+    renderPersons();
+    renderSnapshots(s.snapshots || []);
+    connectSSE();
+  }
+
+  // --- SSE ---
+  let _es;
+  function connectSSE() {
+    if (_es) _es.close();
+    _es = new EventSource('/api/events');
+    _es.onmessage = e => {
+      const incoming = JSON.parse(e.data);
+      price = incoming.price;
+      persons = incoming.persons;
+      document.getElementById('currentPrice').textContent = fmt(price);
+      renderPersons();
+      renderSnapshots(incoming.snapshots || []);
+    };
+    _es.onerror = () => { _es.close(); setTimeout(connectSSE, 3000); };
+  }
+
+  // --- Mollie ---
+  function updateMollieUI(mk) {
+    const status = document.getElementById('mollieStatus');
+    const removeBtn = document.getElementById('removeMollieKey');
+    if (mk.configured) {
+      status.innerHTML = `API-sleutel ingesteld: <strong style="color:var(--accent)">${mk.preview}</strong>`;
+      removeBtn.style.display = 'inline-block';
+    } else {
+      status.innerHTML = `<span style="color:var(--danger)">Nog geen sleutel ingesteld. Betalingen zijn uitgeschakeld.</span>`;
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  document.getElementById('removeMollieKey').addEventListener('click', async () => {
+    if (!confirm('Mollie API-sleutel verwijderen? Betalingen worden uitgeschakeld.')) return;
+    try {
+      await api('DELETE', '/api/mollie-key');
+      showToast('Mollie sleutel verwijderd');
+      updateMollieUI({ configured: false });
+    } catch (e) { showToast('Fout: ' + e.message); }
+  });
+
+  document.getElementById('saveMollieKey').addEventListener('click', async () => {
+    const key = document.getElementById('mollieKeyInput').value.trim();
+    const err = document.getElementById('mollieError');
+    if (!key) { err.textContent = 'Voer een API-sleutel in.'; return; }
+    err.textContent = '';
+    try {
+      await api('PUT', '/api/mollie-key', { key });
+      document.getElementById('mollieKeyInput').value = '';
+      showToast('Mollie sleutel opgeslagen');
+      updateMollieUI({ configured: true, preview: key.slice(0, 8) + '…' });
+    } catch (e) { err.textContent = e.message; }
+  });
+
+  // --- Prijs ---
+  document.getElementById('savePrice').addEventListener('click', async () => {
+    const val = parseFloat(document.getElementById('priceInput').value);
+    const err = document.getElementById('priceError');
+    if (isNaN(val) || val < 0) { err.textContent = 'Voer een geldige prijs in.'; return; }
+    err.textContent = '';
+    try {
+      const result = await api('PUT', '/api/price', { price: val });
+      price = result.price;
+      document.getElementById('currentPrice').textContent = fmt(price);
+      document.getElementById('priceInput').value = price.toFixed(2);
+      showToast('Prijs opgeslagen');
+    } catch (e) { err.textContent = e.message; }
+  });
+
+  document.getElementById('priceInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('savePrice').click();
+  });
+
+  // --- Namen ---
+  function renderPersons() {
+    const list = document.getElementById('personsList');
+    if (!persons.length) {
+      list.innerHTML = '<div class="empty-list">Nog geen namen toegevoegd.</div>';
+      return;
+    }
+    list.innerHTML = persons.map(p => `
+      <div class="person-row">
+        <span class="person-row-name">${esc(p.name)}</span>
+        <span class="person-row-count">${p.count} streepje${p.count !== 1 ? 's' : ''}</span>
+        <button class="remove-btn" data-id="${p.id}" title="Verwijderen">✕</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('addBtn').addEventListener('click', async () => {
+    const input = document.getElementById('nameInput');
+    const name = input.value.trim();
+    const err = document.getElementById('nameError');
+    if (!name) { err.textContent = 'Voer een naam in.'; return; }
+    err.textContent = '';
+    try {
+      const p = await api('POST', '/api/persons', { name });
+      input.value = '';
+      input.focus();
+      showToast(`"${p.name}" toegevoegd`);
+    } catch (e) {
+      err.textContent = e.message === 'Name already exists' ? 'Naam bestaat al.' : e.message;
+    }
+  });
+
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('addBtn').click();
+  });
+
+  document.getElementById('personsList').addEventListener('click', async e => {
+    const btn = e.target.closest('.remove-btn');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const person = persons.find(p => p.id == id);
+    if (!confirm(`"${person?.name}" verwijderen?`)) return;
+    try {
+      await api('DELETE', `/api/persons/${id}`);
+      showToast('Persoon verwijderd');
+    } catch (e) { showToast('Fout: ' + e.message); }
+  });
+
   // --- Snapshots ---
   function renderSnapshots(snapshots) {
     const list = document.getElementById('snapshotList');
@@ -481,51 +690,80 @@
       list.innerHTML = '<div class="empty-list">Geen momentopnames gevonden.</div>';
       return;
     }
+    // Preserve open state across re-renders
+    const openIds = new Set(
+      [...document.querySelectorAll('.snapshot-entry.open')].map(el => el.dataset.id)
+    );
     list.innerHTML = snapshots.map(s => {
       const total = s.persons.reduce((n, p) => n + p.count, 0);
       const pills = s.persons
         .filter(p => p.count > 0)
         .map(p => `<span class="snapshot-pill">${esc(p.name)} <span class="pill-count">${p.count}</span></span>`)
         .join('');
+      const isOpen = openIds.has(String(s.id));
       return `
-        <div class="snapshot-entry" data-id="${s.id}">
-          <div class="snapshot-header">
+        <div class="snapshot-entry ${isOpen ? 'open' : ''}" data-id="${s.id}">
+          <button class="snapshot-header" data-toggle="${s.id}">
             <span class="snapshot-label">${esc(s.label)}</span>
             <span class="snapshot-total">${total} streepje${total !== 1 ? 's' : ''}</span>
             <span class="snapshot-chevron">▼</span>
-          </div>
+          </button>
           <div class="snapshot-body">
             <div class="snapshot-persons">${pills || '<span style="color:var(--text-muted);font-size:0.85rem">Geen streepjes</span>'}</div>
-            <button class="btn-restore" data-restore="${s.id}">↩ Herstel deze stand</button>
+            <div class="snapshot-actions">
+              <button class="btn-restore" data-restore="${s.id}">↩ Herstel</button>
+              <button class="btn-danger-ghost" data-delete-snap="${s.id}">Verwijderen</button>
+            </div>
           </div>
         </div>`;
     }).join('');
   }
 
-  // Toggle snapshot expand
   document.getElementById('snapshotList').addEventListener('click', async e => {
+    const toggleBtn = e.target.closest('[data-toggle]');
     const restoreBtn = e.target.closest('[data-restore]');
-    if (restoreBtn) {
-      const id = restoreBtn.dataset.restore;
-      if (!confirm('Streepjes herstellen naar deze momentopname?')) return;
-      try {
-        await api('POST', `/api/snapshots/${id}/restore`);
-        showToast('Stand hersteld');
-      } catch (err) { showToast('Fout: ' + err.message); }
+    const deleteBtn = e.target.closest('[data-delete-snap]');
+
+    if (toggleBtn) {
+      toggleBtn.closest('.snapshot-entry').classList.toggle('open');
       return;
     }
-    const header = e.target.closest('.snapshot-header');
-    if (header) {
-      header.closest('.snapshot-entry').classList.toggle('open');
+    if (restoreBtn) {
+      if (!confirm('Streepjes herstellen naar deze momentopname?')) return;
+      try {
+        await api('POST', `/api/snapshots/${restoreBtn.dataset.restore}/restore`);
+        showToast('Stand hersteld');
+      } catch (e) { showToast('Fout: ' + e.message); }
+      return;
+    }
+    if (deleteBtn) {
+      if (!confirm('Deze momentopname verwijderen?')) return;
+      try {
+        await api('DELETE', `/api/snapshots/${deleteBtn.dataset.deleteSnap}`);
+        showToast('Momentopname verwijderd');
+      } catch (e) { showToast('Fout: ' + e.message); }
     }
   });
 
-  // Manual snapshot
-  document.getElementById('takeSnapshotBtn').addEventListener('click', async () => {
+  document.getElementById('takeSnapshotBtn').addEventListener('click', async e => {
+    e.stopPropagation(); // prevent section collapse toggle
     try {
       await api('POST', '/api/snapshots', {});
       showToast('Momentopname opgeslagen');
-    } catch (err) { showToast('Fout: ' + err.message); }
+    } catch (e) { showToast('Fout: ' + e.message); }
+  });
+
+  // --- Beheeracties ---
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!confirm('Alle streepjes wissen?')) return;
+    await api('POST', '/api/reset');
+    showToast('Alle streepjes gewist');
+  });
+
+  document.getElementById('clearAllBtn').addEventListener('click', async () => {
+    if (!confirm('Alle namen permanent verwijderen?')) return;
+    await Promise.all(persons.map(p => api('DELETE', `/api/persons/${p.id}`)));
+    showToast('Alle namen verwijderd');
   });
 
   // --- Password gate ---
@@ -535,6 +773,7 @@
   function unlock() {
     document.getElementById('pwGate').style.display = 'none';
     document.getElementById('pageContent').classList.add('unlocked');
+    initSections();
     loadState();
   }
 
@@ -560,181 +799,9 @@
     if (e.key === 'Enter') document.getElementById('pwSubmit').click();
   });
 
-  // Auto-focus password input
   if (!sessionStorage.getItem(SESSION_KEY)) {
     setTimeout(() => document.getElementById('pwInput').focus(), 50);
   }
-
-  let persons = [];
-  let price = 0;
-
-  const fmt = n => '€' + n.toFixed(2).replace('.', ',');
-  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 2200);
-  }
-
-  async function api(method, path, body) {
-    const r = await fetch(path, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Fout');
-    return data;
-  }
-
-  async function loadState() {
-    const [s, mk] = await Promise.all([api('GET', '/api/state'), api('GET', '/api/mollie-key')]);
-    price = s.price;
-    persons = s.persons;
-    document.getElementById('priceInput').value = price.toFixed(2);
-    document.getElementById('currentPrice').textContent = fmt(price);
-    updateMollieUI(mk);
-    renderPersons();
-    renderSnapshots(s.snapshots || []);
-    connectSSE();
-  }
-
-  let _es;
-  function connectSSE() {
-    if (_es) _es.close();
-    _es = new EventSource('/api/events');
-    _es.onmessage = e => {
-      const incoming = JSON.parse(e.data);
-      price = incoming.price;
-      persons = incoming.persons;
-      document.getElementById('currentPrice').textContent = fmt(price);
-      renderPersons();
-      renderSnapshots(incoming.snapshots || []);
-    };
-    _es.onerror = () => { _es.close(); setTimeout(connectSSE, 3000); };
-  }
-
-  function updateMollieUI(mk) {
-    const status = document.getElementById('mollieStatus');
-    const removeBtn = document.getElementById('removeMollieKey');
-    if (mk.configured) {
-      status.innerHTML = `API-sleutel ingesteld: <strong style="color:var(--accent)">${mk.preview}</strong>`;
-      removeBtn.style.display = 'inline-block';
-    } else {
-      status.innerHTML = `<span style="color:var(--danger)">Nog geen sleutel ingesteld. Betalingen zijn uitgeschakeld.</span>`;
-      removeBtn.style.display = 'none';
-    }
-  }
-
-  // Remove Mollie key
-  document.getElementById('removeMollieKey').addEventListener('click', async () => {
-    if (!confirm('Mollie API-sleutel verwijderen? Betalingen worden uitgeschakeld.')) return;
-    try {
-      await api('DELETE', '/api/mollie-key');
-      showToast('Mollie sleutel verwijderd');
-      updateMollieUI({ configured: false });
-    } catch (e) { showToast('Fout: ' + e.message); }
-  });
-
-  // Save Mollie key
-  document.getElementById('saveMollieKey').addEventListener('click', async () => {
-    const key = document.getElementById('mollieKeyInput').value.trim();
-    const err = document.getElementById('mollieError');
-    if (!key) { err.textContent = 'Voer een API-sleutel in.'; return; }
-    err.textContent = '';
-    try {
-      await api('PUT', '/api/mollie-key', { key });
-      document.getElementById('mollieKeyInput').value = '';
-      showToast('Mollie sleutel opgeslagen');
-      updateMollieUI({ configured: true, preview: key.slice(0, 8) + '…' });
-    } catch (e) { err.textContent = e.message; }
-  });
-
-  function renderPersons() {
-    const list = document.getElementById('personsList');
-    if (!persons.length) {
-      list.innerHTML = '<div class="empty-list">Nog geen namen toegevoegd.</div>';
-      return;
-    }
-    list.innerHTML = persons.map(p => `
-      <div class="person-row">
-        <span class="person-row-name">${esc(p.name)}</span>
-        <span class="person-row-count">${p.count} streepje${p.count !== 1 ? 's' : ''}</span>
-        <button class="remove-btn" data-id="${p.id}" title="Verwijderen">✕</button>
-      </div>
-    `).join('');
-  }
-
-  // Save price
-  document.getElementById('savePrice').addEventListener('click', async () => {
-    const val = parseFloat(document.getElementById('priceInput').value);
-    const err = document.getElementById('priceError');
-    if (isNaN(val) || val < 0) { err.textContent = 'Voer een geldige prijs in.'; return; }
-    err.textContent = '';
-    try {
-      const result = await api('PUT', '/api/price', { price: val });
-      price = result.price;
-      document.getElementById('currentPrice').textContent = fmt(price);
-      document.getElementById('priceInput').value = price.toFixed(2);
-      showToast('Prijs opgeslagen');
-    } catch (e) { err.textContent = e.message; }
-  });
-
-  document.getElementById('priceInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('savePrice').click();
-  });
-
-  // Add person
-  document.getElementById('addBtn').addEventListener('click', async () => {
-    const input = document.getElementById('nameInput');
-    const name = input.value.trim();
-    const err = document.getElementById('nameError');
-    if (!name) { err.textContent = 'Voer een naam in.'; return; }
-    err.textContent = '';
-    try {
-      const p = await api('POST', '/api/persons', { name });
-      input.value = '';
-      input.focus();
-      showToast(`"${p.name}" toegevoegd`);
-    } catch (e) {
-      err.textContent = e.message === 'Name already exists' ? 'Naam bestaat al.' : e.message;
-    }
-  });
-
-  document.getElementById('nameInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('addBtn').click();
-  });
-
-  // Remove person
-  document.getElementById('personsList').addEventListener('click', async e => {
-    const btn = e.target.closest('.remove-btn');
-    if (!btn) return;
-    const id = btn.dataset.id;
-    const person = persons.find(p => p.id == id);
-    if (!confirm(`"${person?.name}" verwijderen?`)) return;
-    try {
-      await api('DELETE', `/api/persons/${id}`);
-      showToast('Persoon verwijderd');
-    } catch (e) { showToast('Fout: ' + e.message); }
-  });
-
-  // Reset tallies
-  document.getElementById('resetBtn').addEventListener('click', async () => {
-    if (!confirm('Alle streepjes wissen?')) return;
-    await api('POST', '/api/reset');
-    showToast('Alle streepjes gewist');
-  });
-
-  // Clear all persons
-  document.getElementById('clearAllBtn').addEventListener('click', async () => {
-    if (!confirm('Alle namen permanent verwijderen?')) return;
-    await Promise.all(persons.map(p => api('DELETE', `/api/persons/${p.id}`)));
-    showToast('Alle namen verwijderd');
-  });
-
 </script>
 </body>
 </html>

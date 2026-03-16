@@ -195,6 +195,13 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
+// Delete snapshot
+app.delete('/api/snapshots/:id', (req, res) => {
+  db.prepare('DELETE FROM snapshots WHERE id = ?').run(req.params.id);
+  broadcast();
+  res.json({ ok: true });
+});
+
 // Manual snapshot
 app.post('/api/snapshots', (req, res) => {
   const label = (req.body.label || '').trim() || formatSnapshotLabel(Date.now()) + ' (handmatig)';
