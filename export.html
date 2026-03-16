@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Export — Streepjeslijst</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --accent: #4f8ef7;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --text: #e8eaf0;
+      --text-muted: #7a7f9a;
+      --border: #2e3248;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+
+    /* ── Toolbar (hidden when printing) ── */
+    .toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .toolbar-title span { color: var(--accent); }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .back-link {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .back-link:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Document ── */
+    .document {
+      max-width: 680px;
+      margin: 1.75rem auto;
+      padding: 0 1.25rem 3rem;
+    }
+
+    .doc-header {
+      margin-bottom: 1.75rem;
+    }
+
+    .doc-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.3rem;
+    }
+
+    .doc-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* ── Table ── */
+    .tally-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .tally-table thead tr {
+      background: var(--surface2);
+      border-bottom: 2px solid var(--border);
+    }
+
+    .tally-table th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .tally-table th.num { text-align: right; }
+
+    .tally-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+
+    .tally-table tbody tr:hover { background: var(--surface2); }
+
+    .tally-table td {
+      padding: 0.8rem 1rem;
+    }
+
+    .tally-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .td-name { font-weight: 600; }
+
+    .td-count { font-size: 1.05rem; font-weight: 700; }
+
+    .td-amount { font-weight: 700; color: var(--success); }
+
+    .tally-table tfoot tr {
+      background: var(--surface);
+      border-top: 2px solid var(--border);
+    }
+
+    .tally-table tfoot td {
+      padding: 0.9rem 1rem;
+      font-weight: 700;
+    }
+
+    .tally-table tfoot .foot-label { color: var(--text-muted); font-size: 0.8rem; }
+    .tally-table tfoot .foot-total { font-size: 1.15rem; color: var(--accent); }
+    .tally-table tfoot td.num { text-align: right; }
+
+    .bar-cell {
+      width: 120px;
+      padding-right: 1rem !important;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 3rem;
+      font-size: 0.95rem;
+    }
+
+    /* ── Print styles ── */
+    @media print {
+      :root {
+        --bg: #fff;
+        --surface: #fff;
+        --surface2: #f5f5f5;
+        --text: #111;
+        --text-muted: #666;
+        --border: #ddd;
+        --accent: #1a56db;
+        --success: #0a7c42;
+      }
+
+      body { background: #fff; color: #111; }
+
+      .toolbar { display: none !important; }
+
+      .document { margin: 0; padding: 0; max-width: 100%; }
+
+      .tally-table tbody tr:hover { background: none; }
+
+      .bar-fill { background: #1a56db !important; }
+      .bar-track { background: #eee !important; }
+
+      .tally-table tfoot .foot-total { color: #1a56db; }
+      .td-amount { color: #0a7c42 !important; }
+
+      @page { margin: 1.5cm; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="toolbar-title">Streepjes<span>lijst</span> — Export</span>
+  <button class="btn btn-primary" id="printBtn">Afdrukken / PDF</button>
+  <button class="btn btn-ghost" id="csvBtn">CSV downloaden</button>
+  <a href="/" class="back-link">← Terug</a>
+</div>
+
+<div class="document">
+  <div class="doc-header">
+    <div class="doc-title" id="docTitle">Streepjeslijst</div>
+    <div class="doc-meta">
+      <span id="docDate"></span>
+      <span id="docPrice"></span>
+    </div>
+  </div>
+  <div id="tableWrap"><p class="empty-state">Laden…</p></div>
+</div>
+
+<script>
+  const fmt = n => '€' + n.toFixed(2).replace('.', ',');
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  let exportData = { price: 0, persons: [] };
+
+  function formatDate(d) {
+    return d.toLocaleString('nl-NL', {
+      timeZone: 'Europe/Amsterdam',
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  async function load() {
+    const state = await fetch('/api/state').then(r => r.json());
+    exportData = state;
+    render(state);
+  }
+
+  function render(state) {
+    const now = new Date();
+    document.getElementById('docDate').textContent = 'Geëxporteerd op: ' + formatDate(now);
+    document.getElementById('docPrice').textContent = 'Prijs per consumptie: ' + fmt(state.price);
+
+    const persons = state.persons;
+    const maxCount = Math.max(...persons.map(p => p.count), 1);
+    const totalDrinks = persons.reduce((s, p) => s + p.count, 0);
+    const totalAmount = totalDrinks * state.price;
+
+    if (!persons.length) {
+      document.getElementById('tableWrap').innerHTML = '<p class="empty-state">Geen namen op de lijst.</p>';
+      return;
+    }
+
+    document.getElementById('tableWrap').innerHTML = `
+      <table class="tally-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Naam</th>
+            <th class="num">Consumpties</th>
+            <th class="bar-cell"></th>
+            <th class="num">Bedrag</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${persons.map((p, i) => `
+            <tr>
+              <td style="color:var(--text-muted);font-size:0.8rem">${i + 1}</td>
+              <td class="td-name">${esc(p.name)}</td>
+              <td class="td-count num">${p.count}</td>
+              <td class="bar-cell">
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:${Math.round(p.count / maxCount * 100)}%"></div>
+                </div>
+              </td>
+              <td class="td-amount num">${fmt(p.count * state.price)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td></td>
+            <td class="foot-label">Totaal</td>
+            <td class="num foot-total">${totalDrinks}</td>
+            <td class="bar-cell"></td>
+            <td class="num foot-total">${fmt(totalAmount)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+  }
+
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  document.getElementById('csvBtn').addEventListener('click', () => {
+    const { price, persons } = exportData;
+    const now = new Date();
+    const lines = [
+      `Streepjeslijst export`,
+      `Datum;${now.toLocaleString('nl-NL')}`,
+      `Prijs per consumptie;${price.toFixed(2)}`,
+      ``,
+      `#;Naam;Consumpties;Bedrag`,
+      ...persons.map((p, i) =>
+        `${i + 1};${p.name};${p.count};${(p.count * price).toFixed(2)}`
+      ),
+      ``,
+      `Totaal;${persons.reduce((s,p) => s + p.count, 0)};${(persons.reduce((s,p) => s + p.count, 0) * price).toFixed(2)}`
+    ];
+
+    const csv = lines.join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `streepjeslijst-${now.toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  load();
+</script>
+</body>
+</html>
