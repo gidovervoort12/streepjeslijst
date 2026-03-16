@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streepjeslijst</title>
+  <link rel="stylesheet" href="/css/index.css" />
+</head>
+<body>
+
+<header>
+  <h1>Streepjes<span>lijst</span></h1>
+  <div style="display:flex;align-items:center;gap:0.6rem">
+    <div class="price-badge">
+      <span class="label">per consumptie</span>
+      <span class="value" id="priceDisplay">…</span>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <nav class="nav-menu" id="navMenu">
+    <a href="/export.html" target="_blank"><span class="nav-icon">🖨️</span> Exporteren</a>
+    <a href="/admin.html"><span class="nav-icon">⚙️</span> Admin</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="search" id="searchInput" placeholder="Zoek een naam…" autocomplete="off" />
+  </div>
+  <div class="person-list" id="personList">
+    <div class="empty"><div class="icon">⏳</div>Laden…</div>
+  </div>
+
+  <form class="add-self" id="addSelfForm">
+    <input type="text" id="addSelfInput" placeholder="Jouw naam toevoegen…" autocomplete="off" maxlength="30" />
+    <button type="submit">+ Voeg toe</button>
+  </form>
+  <div class="add-self-error" id="addSelfError"></div>
+
+  <div id="summarySection" style="display:none">
+    <div class="summary">
+      <div>
+        <div class="summary-label">Totaal consumpties</div>
+        <div id="totalDrinks" style="font-size:1.1rem;font-weight:700;margin-top:0.2rem">0</div>
+      </div>
+      <div style="text-align:right">
+        <div class="summary-label">Totaal bedrag</div>
+        <div class="summary-total" id="totalAmount">€0,00</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="undo-fab" id="undoBtn" title="Ongedaan maken">↩</button>
+<div class="toast" id="toast"></div>
+
+<script src="/js/index.js"></script>
+</body>
+</html>

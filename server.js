@@ -7,7 +7,7 @@ const app = express();
 const db = new DatabaseSync(path.join(__dirname, 'streepjeslijst.db'));
 
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- DB setup ---
 db.exec(`

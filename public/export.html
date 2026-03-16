@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Export — Streepjeslijst</title>
+  <link rel="stylesheet" href="/css/export.css" />
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="toolbar-title">Streepjes<span>lijst</span> — Export</span>
+  <button class="btn btn-primary" id="printBtn">Afdrukken / PDF</button>
+  <a href="/" class="back-link">← Terug</a>
+</div>
+
+<div class="document">
+  <div class="doc-header">
+    <div class="doc-title" id="docTitle">Streepjeslijst</div>
+    <div class="doc-meta">
+      <span id="docDate"></span>
+      <span id="docPrice"></span>
+    </div>
+  </div>
+  <div id="tableWrap"><p class="empty-state">Laden…</p></div>
+</div>
+
+<script src="/js/export.js"></script>
+</body>
+</html>
